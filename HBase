@@ -1,0 +1,191 @@
+***********************************************************************************************************************
+$HBASE_HOME/bin/hbase shell
+***********************************************************************************************************************
+
+
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+
+Type "exit<RETURN>" to leave the HBase Shell
+
+hbase(main):001:0> version
+
+ list
+
+
+
+***********************************************************************************************************************
+ Basic commands and the structure
+***********************************************************************************************************************
+
+1.  Column – A single field in table
+
+2.  Column-family – is group of columns
+
+3.  Row-key-Row-key in hbase is a mandatory field which serves as the unique identifier for every record.
+
+
+
+***********************************************************************************************************************
+Creating a table in HBase
+***********************************************************************************************************************
+
+Syntax : create ‘<table-name>’,’<column-family1>’ ,’<column-family2>’ …….
+
+HBase data model, columns are grouped into column families, which must be defined during table creation. 
+We must have at least one column family. HBase currently does not do well with 
+above three column families so keep the number of column families in your schema low.
+
+create 'customer','address','order'
+
+
+
+
+***********************************************************************************************************************
+Inserting the data into HBase
+***********************************************************************************************************************
+
+We can insert the data using PUT command
+
+Syntax: put ‘<table-name>’,’row-key’,’columnfamily:columnname’,’value’
+
+Row-key is a mandatory field which serves as the unique identifier for every record.
+
+hbase(main):026:0> put 'customer','john','address:city','Boston'
+hbase(main):027:0> put 'customer','john','address:state','Massachusetts'
+hbase(main):028:0> put 'default_dev:customer','john','address:street','street1'
+hbase(main):029:0> put 'default_dev:customer','john','order:number','ORD-15'
+hbase(main):030:0> put 'default_dev:customer','john','order:amount','15'
+
+
+
+***********************************************************************************************************************
+Inserting second record
+***********************************************************************************************************************
+
+hbase(main):034:0> put 'default_dev:customer','Finch','address:city','Newyork'
+hbase(main):035:0> put 'default_dev:customer','Finch','address:state','Newyork'
+hbase(main):036:0> put 'default_dev:customer','Finch','order:number','ORD-16'
+hbase(main):037:0> put 'default_dev:customer','Finch','order:amount','15'
+
+
+
+
+***********************************************************************************************************************
+Getting single record from table
+***********************************************************************************************************************
+
+Syntax: get ‘<table-name>’,’<row-key>’,’<column-family>’
+get 'customer','john'
+
+
+
+***********************************************************************************************************************
+Using get command to retrieve the address of john
+***********************************************************************************************************************
+
+get 'customer','john','address'
+get 'customer','john','address:city'
+
+
+
+***********************************************************************************************************************
+To get the all the records from the table we should use scan command.
+***********************************************************************************************************************
+
+Syntax : scan ‘<table -name>’
+scan 'customer'
+
+
+***********************************************************************************************************************
+Deleting records
+***********************************************************************************************************************
+
+Deleting entire record from table
+delete  ‘<table-name>’,’<rowkey>’
+delete 'customer','Finch'
+
+
+***********************************************************************************************************************
+Deleting specific column from table
+***********************************************************************************************************************
+
+delete 'customer',john,'address:city'
+
+
+***********************************************************************************************************************
+Counting number of rows in the table
+***********************************************************************************************************************
+
+count 'customer'
+
+
+
+***********************************************************************************************************************
+Version in Apache HBase
+***********************************************************************************************************************
+
+Updating tables means replacing the previous value with the new one. 
+But in HBase, if we try to rewrite the column values, it does not overwrite the existing value but rather stores 
+different values per row by time (and qualifier). Excess versions are removed during major compaction. 
+The number of max versions may need to be increased or decreased depending on application needs.
+
+The default version is 1, we can modify and increase or decrease the versions to be stored using alter command:
+
+alter 'customer',NAME=>'address',VERSIONS=>5
+
+put 'default_dev:customer','Finch','address:city','Newyork'
+put 'default_dev:customer','Finch','address:city','Detroit'
+put 'default_dev:customer','Finch','address:city','Sanfranscisco'
+scan 'default_dev:customer',{COLUMN=>'address:city',VERSIONS=>2}
+scan 'default_dev:customer',{COLUMN=>'address:city',VERSIONS=>1}
+scan 'default_dev:customer',{COLUMN=>'address:city',VERSIONS=>3}
+
+
+***********************************************************************************************************************
+Dropping table
+***********************************************************************************************************************
+
+Before dropping the table we must disable the table by using below syntax:
+
+disable ‘table-name’
+disable ‘customer’
+drop ‘customer’
+
+
+
+***********************************************************************************************************************
+Alter Table
+***********************************************************************************************************************
+
+alter 'customer', {NAME => 'cf1', COMPRESSION => 'GZ'} 
+alter 'customer', {NAME => 'cf1', IN_MEMORY => 'true'} 
+alter 'customer', {NAME => 'cf1', VERSIONS => 1}
+
+
+
+
+***********************************************************************************************************************
+Hive View on HBase Table
+***********************************************************************************************************************
+
+CREATE EXTERNAL TABLE hive_customer
+(
+    key                  string,
+	col  String 
+
+)
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+WITH SERDEPROPERTIES
+("hbase.columns.mapping" = ":key,cf1:c1")
+TBLPROPERTIES ("hbase.table.name" = "customer")
+;
+
+
+====================================================================================================
+====================================================================================================
+
+
+
+
+
+
